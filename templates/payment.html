@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FPX Online Banking</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f2f2f2;
+      padding: 40px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #004085;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    .info p {
+      margin: 10px 0;
+    }
+    .bank-select {
+      margin-top: 30px;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .pay-btn {
+      margin-top: 30px;
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .pay-btn:hover {
+      background-color: #218838;
+    }
+    .cancel {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .cancel a {
+      color: #dc3545;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>FPX Online Banking</h2>
+
+    {% if message %}
+      <div style="margin-top: 20px; padding: 12px; border-radius: 5px;
+                  background-color: {{ 'rgba(220, 53, 69, 0.1)' if error else 'rgba(40, 167, 69, 0.1)' }};
+                  color: {{ '#dc3545' if error else '#28a745' }};
+                  border: 1px solid {{ '#dc3545' if error else '#28a745' }};
+                  font-weight: bold;">
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <div class="info">
+      <p><strong>Product:</strong> {{ product.name }}</p>
+      <p><strong>Quantity:</strong> {{ quantity }}</p>
+      <p><strong>Total Amount:</strong> RM{{ "%.2f"|format(total_price) }}</p>
+    </div>
+
+    <!-- ✅ FIXED: Changed action to process_payment -->
+    <form action="{{ url_for('process_payment') }}" method="POST">
+      <input type="hidden" name="product_id" value="{{ product.id }}">
+      <input type="hidden" name="quantity" value="{{ quantity }}">
+
+      <div class="bank-select">
+        <label for="bank">Choose your bank:</label>
+        <select id="bank" name="bank_name" required>
+          <option value="">-- Select Bank --</option>
+          <option value="maybank">Maybank</option>
+          <option value="cimb">CIMB</option>
+          <option value="rhb">RHB</option>
+          <option value="publicbank">Public Bank</option>
+          <option value="ambank">AmBank</option>
+          <option value="hongleong">Hong Leong Bank</option>
+          <option value="bankislam">Bank Islam</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <label for="account_number">Account Number:</label>
+        <input type="text" id="account_number" name="account_number" required
+               style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <label for="account_password">Password:</label>
+        <input type="password" id="account_password" name="account_password" required
+               style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+
+      <button type="submit" class="pay-btn">Pay Now</button>
+    </form>
+
+    <div class="cancel">
+      <a href="{{ url_for('customer_sale') }}">Cancel and go back</a>
+    </div>
+  </div>
+</body>
+</html>
+

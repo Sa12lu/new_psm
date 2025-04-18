@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 40px;
+        }
+        .catalog {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+            padding: 0 10px;
+        }
+        .card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.02);
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+        .card-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .card-text {
+            font-size: 14px;
+            margin-bottom: 10px;
+            flex-grow: 1;
+        }
+        .price {
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .quantity {
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .buy-btn {
+            padding: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .buy-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none; position: fixed; z-index: 10;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 8px;
+            width: 300px; text-align: center;
+        }
+        .modal-content input[type="number"] {
+            padding: 8px; width: 80%; margin-bottom: 10px;
+        }
+        .modal-content button {
+            padding: 8px 15px; margin: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 20;">
+        <button onclick="toggleCart()" style="background: none; border: none; cursor: pointer;">
+            <i class="fas fa-shopping-cart" style="font-size: 28px; color: #007bff;"></i>
+        </button>
+    </div>
+    
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-message">
+      {% for category, message in messages %}
+        <div style="
+          background-color: {{ 'rgba(40, 167, 69, 0.1)' if category == 'success' else 'rgba(220, 53, 69, 0.1)' }};
+          color: {{ '#28a745' if category == 'success' else '#dc3545' }};
+          padding: 12px;
+          border-radius: 5px;
+          margin-bottom: 20px;
+          border: 1px solid {{ '#28a745' if category == 'success' else '#dc3545' }};
+          font-weight: bold;">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    <script>
+      setTimeout(() => {
+        const flash = document.getElementById('flash-message');
+        if (flash) flash.style.display = 'none';
+      }, 3000);  // 5 seconds
+    </script>
+    {% endif %}
+    {% endwith %}
+
+
+    <h1>Available Products</h1>
+
+    <div class="catalog">
+        {% for product in products %}
+        <div class="card">
+            {% if product.image_data %}
+                <img src="{{ url_for('product_sale_image', product_id=product.id) }}" alt="{{ product.name }}">
+            {% else %}
+                <img src="https://via.placeholder.com/250x200?text=No+Image" alt="No image found">
+            {% endif %}
+            <div class="card-body">
+                <div class="card-title">{{ product.name }}</div>
+                <div class="card-text">{{ product.description or "No description available." }}</div>
+                <div class="price">RM{{ product.price }}</div>
+                <div class="quantity">In stock: {{ product.quantity }}</div>
+                <button type="button" class="buy-btn"
+                            onclick="openModal({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.quantity }})"
+                            {% if product.quantity == 0 %} disabled {% endif %}>
+                    Buy
+                </button>
+        
+            </div>
+        </div>
+        {% else %}
+        <p style="grid-column: 1 / -1; text-align: center;">No products available</p>
+        {% endfor %}
+    </div>
+
+    <div id="buyModal" class="modal">
+        <div class="modal-content">
+          <h3 id="modalTitle">Buy Product</h3>
+          <p>Enter quantity:</p>
+          <input type="number" id="buyQuantity" min="1" value="1">
+          <p id="totalPrice"></p>
+          <div>
+            <button id="confirmBuy">Confirm</button>
+            <button onclick="closeModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+    <script>
+    let selectedProductId = null;
+    let maxStock = 0;
+    let price = 0;
+        
+    function openModal(productId, productName, productPrice, stockQty) {
+         selectedProductId = productId;
+         maxStock = stockQty;
+         price = productPrice;
+        
+         document.getElementById('modalTitle').textContent = `Buy ${productName}`;
+         document.getElementById('buyQuantity').value = 1;
+         document.getElementById('totalPrice').textContent = `Total: RM${price.toFixed(2)}`;
+         document.getElementById('buyModal').style.display = 'flex';
+        }
+        
+    function closeModal() {
+         document.getElementById('buyModal').style.display = 'none';
+        }
+        
+    document.getElementById('buyQuantity').addEventListener('input', function () {
+         let qty = parseInt(this.value) || 0;
+         if (qty > maxStock) {
+                this.value = maxStock;
+                qty = maxStock;
+            }
+         const total = qty * price;
+         document.getElementById('totalPrice').textContent = `Total: RM${total.toFixed(2)}`;
+        });
+        
+    document.getElementById('confirmBuy').addEventListener('click', function () {
+         const quantity = parseInt(document.getElementById('buyQuantity').value) || 1;
+         if (quantity > maxStock) {
+                alert("Cannot buy more than available stock.");
+                return;
+            }
+        
+         const form = document.createElement('form');
+         form.method = 'POST';
+         form.action = `/buy-product/${selectedProductId}`;
+        
+         const input = document.createElement('input');
+         input.type = 'hidden';
+         input.name = 'quantity';
+         input.value = quantity;
+         form.appendChild(input);
+         document.body.appendChild(form);
+         form.submit();
+        });
+</script>
+        
+</body>
+</html>
+
