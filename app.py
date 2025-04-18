@@ -238,6 +238,14 @@ def product_sale_image(product_id):
 
         flash(f'Payment successful via {bank_name.capitalize()}. Thank you!', 'success')
         return redirect(url_for('customer_sale'))
+    
+    @app.route('/customer-sale')
+         def customer_sale():
+         username = session.get('username')  # or however you store logged-in user
+         products = Product.query.all()
+         purchased_products = PurchasedProduct.query.filter_by(username=username).all()
+         return render_template('customer_sale.html', products=products, purchased_products=purchased_products)
+
 
 @app.route('/logout')
 def logout():

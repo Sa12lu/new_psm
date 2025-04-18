@@ -176,6 +176,27 @@
         </div>
       </div>
 
+    <div id="cartModal" class="modal">
+        <div class="modal-content" style="width: 350px;">
+            <h3>Your Purchases</h3>
+            {% if purchased_products %}
+                <ul style="text-align: left; padding-left: 0;">
+                    {% for item in purchased_products %}
+                    <li style="margin-bottom: 10px; list-style: none;">
+                        <strong>{{ item.name }}</strong><br>
+                        Quantity: {{ item.quantity }}<br>
+                        Status: {{ item.status }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No products purchased.</p>
+            {% endif %}
+            <button onclick="toggleCart()">Close</button>
+        </div>
+    </div>
+      
+
     <script>
     let selectedProductId = null;
     let maxStock = 0;
@@ -225,6 +246,12 @@
          document.body.appendChild(form);
          form.submit();
         });
+       
+    function toggleCart() {
+        const cartModal = document.getElementById('cartModal');
+        cartModal.style.display = cartModal.style.display === 'flex' ? 'none' : 'flex';
+        }
+   
 </script>
         
 </body>
