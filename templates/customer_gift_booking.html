@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gift Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        .gift-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .gift-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .gift-card img {
+            max-width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .gift-card h4 {
+            margin: 10px 0 5px;
+        }
+
+        .gift-card p {
+            margin: 4px 0;
+        }
+
+        .no-image {
+            font-size: 14px;
+            color: #999;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Available Gift Bookings</h1>
+
+    <div class="gift-grid">
+        {% for gift in gifts %}
+        <div class="gift-card">
+            {% if gift.image_data %}
+                <img src="{{ url_for('gift_image', gift_id=gift.id) }}" alt="Gift Image">
+            {% else %}
+                <div class="no-image">No image available</div>
+            {% endif %}
+            <h4>{{ gift.description }}</h4>
+            <p><strong>Price:</strong> RM{{ gift.price }}</p>
+            <p><strong>Available:</strong> {{ gift.amount }} pcs</p>
+        </div>
+        {% else %}
+        <p>No gifts available.</p>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
