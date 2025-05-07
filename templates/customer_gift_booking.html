@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Gift Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f9f9f9;
             padding: 20px;
             color: #333;
+            position: relative;
         }
 
         h1 {
@@ -51,9 +53,104 @@
             color: #999;
             margin-top: 10px;
         }
+
+        .book-btn {
+            margin-top: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .book-btn:hover {
+            background-color: #218838;
+        }
+
+        .bell-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .bell-button i {
+            font-size: 26px;
+            color: #007bff;
+        }
+
+        /* Popup modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+            color: red;
+        }
+
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .bell-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 12px;
+            height: 12px;
+            background-color: red;
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+
     </style>
 </head>
 <body>
+
+    <!-- 🔔 Bell icon with red dot if rejected booking exists -->
+    <button class="bell-button" onclick="onBellClick()" title="Notifications">
+        <i class="fas fa-bell">
+            {% if show_notification_dot %}
+            <span id="bellDot" class="bell-dot"></span>
+            {% endif %}
+        </i>
+    </button>
+
 
     <h1>Available Gift Bookings</h1>
 
@@ -65,14 +162,109 @@
             {% else %}
                 <div class="no-image">No image available</div>
             {% endif %}
-            <h4>{{ gift.description }}</h4>
+            <h3>{{ gift.gift_name }}</h3>
+            <p>{{ gift.description }}</p>
             <p><strong>Price:</strong> RM{{ gift.price }}</p>
             <p><strong>Available:</strong> {{ gift.amount }} pcs</p>
+            <button class="book-btn" onclick="openModal({{ gift.id }}, {{ gift.amount }})">Book</button>
         </div>
-        {% else %}
-        <p>No gifts available.</p>
         {% endfor %}
     </div>
+
+    <!-- Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Enter amount to book</h3>
+            <form id="bookingForm" method="POST">
+                <input type="number" id="giftAmount" name="quantity" min="1" required><br>
+                <input type="hidden" id="giftId" name="gift_id">
+                <button type="submit" class="submit-btn">Confirm Booking</button>
+            </form>
+            <p id="errorMsg" style="color: red; font-size: 14px; display: none;"></p>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNotificationModal()">&times;</span>
+        <h3>Your Booked Gifts</h3>
+        {% if booked_gifts %}
+            <ul style="list-style: none; padding: 0;">
+                {% for item in booked_gifts %}
+                <li style="border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 10px;">
+                    <p><strong>Gift Name:</strong> {{ item.gift_name }}</p>  <!-- ← Added -->
+                    <p><strong>Description:</strong> {{ item.description }}</p>
+                    <p><strong>Price:</strong> RM{{ item.price }}</p>
+                    <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                    <p><strong>Status:</strong> {{ item.status }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No bookings yet.</p>
+        {% endif %}
+    </div>
+    </div>
+
+
+    <script>
+        let modal = document.getElementById("bookingModal");
+        let giftInput = document.getElementById("giftAmount");
+        let form = document.getElementById("bookingForm");
+        let errorMsg = document.getElementById("errorMsg");
+
+        let currentGiftId = null;
+        let currentMaxAmount = 0;
+
+        function openModal(giftId, maxAmount) {
+            currentGiftId = giftId;
+            currentMaxAmount = maxAmount;
+            giftInput.value = '';
+            giftInput.max = maxAmount;
+            document.getElementById("giftId").value = giftId;
+            errorMsg.style.display = "none";
+            modal.style.display = "block";
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        form.onsubmit = function(e) {
+            let amount = parseInt(giftInput.value);
+            if (isNaN(amount) || amount < 1 || amount > currentMaxAmount) {
+                errorMsg.innerText = "Please enter a valid amount (1 to " + currentMaxAmount + ")";
+                errorMsg.style.display = "block";
+                e.preventDefault();
+            } else {
+                form.action = "/book-gift/" + currentGiftId;
+            }
+        }
+
+        function onBellClick() {
+         document.getElementById("notificationModal").style.display = "block";
+         // Hide red dot after clicking bell
+         let bellDot = document.getElementById("bellDot");
+         if (bellDot) {
+                bellDot.style.display = "none";
+            }
+        }
+
+
+        function closeNotificationModal() {
+         document.getElementById("notificationModal").style.display = "none";
+        }
+
+        window.onclick = function(event) {
+         if (event.target == modal) {
+            closeModal();
+        } else if (event.target == document.getElementById("notificationModal")) {
+            closeNotificationModal();
+        }
+        }
+    </script>
 
 </body>
 </html>

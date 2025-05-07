@@ -98,6 +98,21 @@
             padding: 8px 15px; margin: 5px;
         }
 
+        .cancel-button {
+            background: none;
+            border: none;
+            color: gray;
+            font-size: 16px;
+            transform: scale(0.8); /* shrink it visually */
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+
+        .cancel-button:hover {
+            color: darkgray;
+        }
+
     </style>
 </head>
 <body>
@@ -180,15 +195,25 @@
         <div class="modal-content" style="width: 350px;">
             <h3>Your Purchases</h3>
             {% if purchased_products %}
-                <ul style="text-align: left; padding-left: 0;">
-                    {% for item in purchased_products %}
-                    <li style="margin-bottom: 10px; list-style: none;">
-                        <strong>{{ item.name }}</strong><br>
-                        Quantity: {{ item.quantity }}<br>
-                        Status: {{ item.status }}
-                    </li>
-                    {% endfor %}
-                </ul>
+            <ul style="text-align: left; padding-left: 0;">
+                {% for item in purchased_products %}
+                <li style="margin-bottom: 10px; list-style: none;" id="purchase-{{ item.id }}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ item.name }}</strong><br>
+                            Quantity: {{ item.quantity }}<br>
+                            Status: {{ item.status }}
+                        </div>
+                        <!--button type="button" onclick="hidePurchase({{ item.id }})"
+                                style="background: none; border: none; cursor: pointer;">
+                            <i class="fas fa-times-circle" style="color: red; font-size: 20px;"></i>
+                        </button-->
+                        <button class="cancel-button" onclick="hidePurchas({{ item.id }})" >❌</button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            
             {% else %}
                 <p>No products purchased.</p>
             {% endif %}
@@ -246,6 +271,13 @@
          document.body.appendChild(form);
          form.submit();
         });
+
+    function hidePurchase(id) {
+         const element = document.getElementById(`purchase-${id}`);
+         if (element) {
+             element.style.display = 'none';
+            }
+        }
        
     function toggleCart() {
         const cartModal = document.getElementById('cartModal');

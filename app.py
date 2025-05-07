@@ -1,5 +1,7 @@
 import io
 import os
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -21,6 +23,7 @@ def allowed_file(filename):
 
 # Models
 class CustUser(db.Model):
+    __tablename__ = 'cust_user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -47,6 +50,29 @@ class PurchasedProduct(db.Model):
     status = db.Column(db.String(50), nullable=False, default="Pending")
     username = db.Column(db.String(150), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # add NEW time date
+
+class GiftBooking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    gift_name = db.Column(db.String(100), nullable=False)  # Added gift name 
+    image_data = db.Column(db.LargeBinary, nullable=True)
+    image_mimetype = db.Column(db.String(50))
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+
+class Booked(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    gift_name = db.Column(db.String(100), nullable=False)  # ← Add this line
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    customer_name = db.Column(db.String(150), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'))  
+    status = db.Column(db.String(50), default='Pending')
+
+
 
 # Create tables
 with app.app_context():
@@ -65,12 +91,16 @@ def login():
         user = CustUser.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
+            session.clear()  # ✅ Hapus semua data sesi sebelum login
             session['username'] = user.username
             session['customer_id'] = user.id
+            print(f"[LOGIN] User: {user.username}, ID: {user.id} has logged in.")
             return redirect(url_for('dashboard'))
         else:
             return render_template('login.html', error="Invalid credentials.")
     return render_template('login.html')
+
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -216,6 +246,84 @@ def process_payment():
 
     flash(f'Payment successful via {bank_name.capitalize()}. Thank you!', 'success')
     return redirect(url_for('customer_sale'))
+
+@app.route('/customer/gift-booking')
+def customer_gift_booking():
+    customer_id = session.get('customer_id')
+    if not customer_id:
+        return redirect(url_for('login'))
+
+    gifts = GiftBooking.query.all()
+    booked_gifts = Booked.query.filter_by(customer_id=customer_id).all()  # Shows only that user's bookings
+   
+    # Check if there's any rejected booking
+    show_notification_dot = any(b.status == "Reject" for b in booked_gifts)
+
+    return render_template(
+        "customer_gift_booking.html",
+        gifts=gifts,
+        booked_gifts=booked_gifts,
+        show_notification_dot=show_notification_dot
+    )
+
+
+@app.route('/gift-image/<int:gift_id>')
+def gift_image(gift_id):
+    gift = GiftBooking.query.get_or_404(gift_id)
+    if gift.image_data:
+        return Response(gift.image_data, mimetype=gift.image_mimetype)
+    return '', 404
+
+@app.route('/book-gift/<int:gift_id>', methods=['POST'])
+def book_gift(gift_id):
+    if 'customer_id' not in session:
+        flash("Please log in to book gifts.")
+        return redirect(url_for('customer_gift_booking'))
+    print(f"[BOOK] Session customer_id: {session.get('customer_id')}")
+    quantity = int(request.form['quantity'])
+    gift = GiftBooking.query.get_or_404(gift_id)
+
+    print(f"Gift selected: {gift.description}, Available: {gift.amount}, Requested: {quantity}")
+
+    if gift.amount < quantity:
+        flash("Not enough gift quantity available.")
+        return redirect(url_for('customer_gift_booking'))
+
+    try:
+        # Decrease available amount
+        gift.amount -= quantity
+        db.session.add(gift)
+
+        # Get customer info
+        customer = CustUser.query.get(session['customer_id'])
+        if not customer:
+            flash("Customer not found.")
+            return redirect(url_for('customer_gift_booking'))
+
+        # Add booking
+        booking = Booked(
+            gift_name=gift.gift_name,  # ← Add this line
+            description=gift.description,
+            price=gift.price,
+            quantity=quantity,
+            datetime=datetime.now(),
+            status='Pending',
+            customer_id=customer.id,
+            customer_name=customer.username
+        )
+        db.session.add(booking)
+
+        # Commit everything
+        db.session.commit()
+        flash("Gift booked successfully.")
+
+    except SQLAlchemyError as e:
+        print("Database error occurred:", str(e))
+        db.session.rollback()
+        flash("Booking failed due to a database error.")
+
+    return redirect(url_for('customer_gift_booking'))
+
 
 @app.route('/logout')
 def logout():
