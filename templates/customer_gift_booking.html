@@ -98,12 +98,16 @@
 
         .modal-content {
             background-color: white;
-            margin: 10% auto;
+            margin: 5% auto;
             padding: 20px;
             border-radius: 10px;
-            width: 300px;
-            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh; /* Limit the height */
+            overflow-y: auto; /* Enable vertical scrolling inside */
+            box-sizing: border-box;
         }
+
 
         .close {
             float: right;
@@ -136,7 +140,48 @@
             border-radius: 50%;
             z-index: 10;
         }
+        
+        .accepted-booking {
+            background-color: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            padding: 10px;
+        }
 
+        .rejected-booking {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .status-item {
+            position: relative;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.4s ease-in-out;
+        }
+
+        .dismiss-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 18px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .status-item.removed {
+            opacity: 0;
+            transform: translateY(-20px);
+            height: 0;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
 
     </style>
 </head>
@@ -149,6 +194,11 @@
             <span id="bellDot" class="bell-dot"></span>
             {% endif %}
         </i>
+    </button>
+
+    <!-- 📘 Book icon for all bookings -->
+    <button class="bell-button" style="right: 70px;" onclick="openAllBookings()" title="All Bookings">
+        <i class="fas fa-book-open"></i>
     </button>
 
 
@@ -185,29 +235,53 @@
         </div>
     </div>
 
-    <!-- Notification Modal -->
-    <div id="notificationModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeNotificationModal()">&times;</span>
-        <h3>Your Booked Gifts</h3>
-        {% if booked_gifts %}
-            <ul style="list-style: none; padding: 0;">
-                {% for item in booked_gifts %}
-                <li style="border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 10px;">
-                    <p><strong>Gift Name:</strong> {{ item.gift_name }}</p>  <!-- ← Added -->
-                    <p><strong>Description:</strong> {{ item.description }}</p>
-                    <p><strong>Price:</strong> RM{{ item.price }}</p>
-                    <p><strong>Quantity:</strong> {{ item.quantity }}</p>
-                    <p><strong>Status:</strong> {{ item.status }}</p>
-                </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No bookings yet.</p>
-        {% endif %}
-    </div>
+    <!-- All Bookings Modal (No status) -->
+    <div id="allBookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAllBookings()">&times;</span>
+            <h3>All Your Bookings</h3>
+            {% if booked_gifts %}
+                <ul style="list-style: none; padding: 0;">
+                    {% for item in booked_gifts %}
+                    <li style="border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 10px;">
+                        <p><strong>Gift Name:</strong> {{ item.gift_name }}</p>
+                        <p><strong>Description:</strong> {{ item.description }}</p>
+                        <p><strong>Price:</strong> RM{{ item.price }}</p>
+                        <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No bookings yet.</p>
+            {% endif %}
+        </div>
     </div>
 
+
+    <!-- Bell Notification Modal (Accepted/Rejected only) -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeNotificationModal()">&times;</span>
+            <h3>Status Updates</h3>
+            {% if non_pending_gifts %}
+                <ul style="list-style: none; padding: 0;">
+                    {% for item in non_pending_gifts %}
+                    <li class="status-item {% if item.status == 'Reject' %}rejected-booking{% elif item.status == 'Accept' %}accepted-booking{% endif %}">
+                        <span class="dismiss-btn" onclick="dismissGift(this)">&times;</span>
+                        <p><strong>Gift Name:</strong> {{ item.gift_name }}</p>
+                        <p><strong>Description:</strong> {{ item.description }}</p>
+                        <p><strong>Price:</strong> RM{{ item.price }}</p>
+                        <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                        <p><strong>Status:</strong> {{ item.status }}</p>
+                    </li>
+
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No notifications yet.</p>
+            {% endif %}
+        </div>
+    </div>
 
     <script>
         let modal = document.getElementById("bookingModal");
@@ -226,10 +300,12 @@
             document.getElementById("giftId").value = giftId;
             errorMsg.style.display = "none";
             modal.style.display = "block";
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
         }
 
         function closeModal() {
             modal.style.display = "none";
+            document.body.style.overflow = ''; // Restore scroll
         }
 
         form.onsubmit = function(e) {
@@ -244,26 +320,39 @@
         }
 
         function onBellClick() {
-         document.getElementById("notificationModal").style.display = "block";
-         // Hide red dot after clicking bell
-         let bellDot = document.getElementById("bellDot");
-         if (bellDot) {
-                bellDot.style.display = "none";
-            }
-        }
+            document.getElementById("notificationModal").style.display = "block";
+            let bellDot = document.getElementById("bellDot");
+            if (bellDot) bellDot.style.display = "none";
 
+            // Mark as notified in DB
+            fetch("/mark-notified");
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        }
 
         function closeNotificationModal() {
-         document.getElementById("notificationModal").style.display = "none";
+            document.getElementById("notificationModal").style.display = "none";
+            document.body.style.overflow = ''; // Restore scroll
         }
 
-        window.onclick = function(event) {
-         if (event.target == modal) {
-            closeModal();
-        } else if (event.target == document.getElementById("notificationModal")) {
-            closeNotificationModal();
+
+        function openAllBookings() {
+            document.getElementById("allBookingModal").style.display = "block";
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
         }
+
+        function closeAllBookings() {
+            document.getElementById("allBookingModal").style.display = "none";
+            document.body.style.overflow = ''; // Restore scroll
         }
+
+        function dismissGift(button) {
+            const item = button.closest('.status-item');
+            item.classList.add('removed');
+            setTimeout(() => {
+                item.remove();
+            }, 400); // match transition time
+        }
+
     </script>
 
 </body>

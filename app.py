@@ -71,6 +71,7 @@ class Booked(db.Model):
     customer_name = db.Column(db.String(150), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'))  
     status = db.Column(db.String(50), default='Pending')
+    notified = db.Column(db.Boolean, default=False)
 
 
 
@@ -254,17 +255,20 @@ def customer_gift_booking():
         return redirect(url_for('login'))
 
     gifts = GiftBooking.query.all()
-    booked_gifts = Booked.query.filter_by(customer_id=customer_id).all()  # Shows only that user's bookings
-   
-    # Check if there's any rejected booking
-    show_notification_dot = any(b.status == "Reject" for b in booked_gifts)
+    booked_gifts = Booked.query.filter_by(customer_id=customer_id).all()
+
+    # Only for bell icon (non-pending)
+    non_pending_gifts = [b for b in booked_gifts if b.status != 'Pending']
+    show_notification_dot = any(b.status != 'Pending' and not b.notified for b in booked_gifts)
 
     return render_template(
         "customer_gift_booking.html",
         gifts=gifts,
         booked_gifts=booked_gifts,
+        non_pending_gifts=non_pending_gifts,
         show_notification_dot=show_notification_dot
     )
+
 
 
 @app.route('/gift-image/<int:gift_id>')
@@ -309,7 +313,8 @@ def book_gift(gift_id):
             datetime=datetime.now(),
             status='Pending',
             customer_id=customer.id,
-            customer_name=customer.username
+            customer_name=customer.username,
+            notified=False  # New booking is unseen
         )
         db.session.add(booking)
 
@@ -323,6 +328,21 @@ def book_gift(gift_id):
         flash("Booking failed due to a database error.")
 
     return redirect(url_for('customer_gift_booking'))
+
+@app.route('/mark-notified')
+def mark_notified():
+    customer_id = session.get('customer_id')
+    if customer_id:
+        updated = Booked.query.filter(
+            Booked.customer_id == customer_id,
+            Booked.status != 'Pending',
+            Booked.notified == False
+        ).all()
+        for b in updated:
+            b.notified = True
+        db.session.commit()
+    return '', 204
+
 
 
 @app.route('/logout')
