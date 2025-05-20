@@ -187,7 +187,7 @@
             opacity: 0.8;
             transform: scale(1.05);
         }
-        
+
     </style>
 </head>
 <body>
@@ -202,7 +202,7 @@
     </button>
 
     <!-- 📘 Book icon for all bookings -->
-    <!--<button class="bell-button" style="right: 70px;" onclick="openAllBookings()" title="All Bookings">
+   <!--  <button class="bell-button" style="right: 70px;" onclick="openAllBookings()" title="All Bookings">
         <i class="fas fa-book-open"></i>
     </button>-->
 
@@ -210,8 +210,8 @@
     <img src="{{ url_for('static', filename='images/booking_icon.png') }}" 
          alt="Booking Icon" 
          class="list-icon" 
-         onclick="openBookingPopup()" 
-         style="width: 32px; height: 32px; cursor: pointer;">
+         onclick="openAllBookings()" 
+         style="width: 32px; height: 32px; cursor: pointer; position: fixed; top: 20px; right: 60px;">
 
 
     <h1>Available Gift Bookings</h1>
