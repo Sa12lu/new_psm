@@ -3,6 +3,7 @@ import os
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -342,6 +343,27 @@ def mark_notified():
             b.notified = True
         db.session.commit()
     return '', 204
+
+@app.route('/booking-history')
+def booking_history():
+    customer_id = session.get('customer_id')
+    if not customer_id:
+        return jsonify([])
+
+    history = Booked.query.filter(
+        Booked.customer_id == customer_id,
+        Booked.status != 'Pending'
+    ).order_by(Booked.datetime.desc()).all()
+
+    data = [{
+        'gift_name': b.gift_name,
+        'price': b.price,
+        'quantity': b.quantity,
+        'datetime': b.datetime.strftime('%Y-%m-%d %H:%M:%S'),
+        'status': b.status
+    } for b in history]
+
+    return jsonify(data)
 
 
 

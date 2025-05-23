@@ -83,6 +83,10 @@
             color: #007bff;
         }
 
+        .bell-button:hover {
+            color: #4899f0; /* Slight color change on hover */
+        }
+
         /* Popup modal */
         .modal {
             display: none;
@@ -188,6 +192,21 @@
             transform: scale(1.05);
         }
 
+        .history-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            right: 100px; /* Adjust position as needed */
+            font-size: 24px;
+            color: #007bff;
+        }
+
+        .history-button:hover {
+            color: #4899f0; /* Slight color change on hover */
+        }
+
     </style>
 </head>
 <body>
@@ -200,6 +219,12 @@
             {% endif %}
         </i>
     </button>
+
+    <!-- 📜 History icon using Font Awesome -->
+    <button class="history-button" onclick="openHistoryModal()" title="History">
+        <i class="fas fa-scroll"></i> <!-- or use another icon like fa-book-open if you prefer -->
+    </button>
+
 
     <!-- 📘 Book icon for all bookings -->
    <!--  <button class="bell-button" style="right: 70px;" onclick="openAllBookings()" title="All Bookings">
@@ -295,6 +320,16 @@
         </div>
     </div>
 
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHistoryModal()">&times;</span>
+            <h3>Booking History</h3>
+            <ul id="historyList" style="list-style: none; padding: 0;"></ul>
+        </div>
+    </div>
+
+
     <script>
         let modal = document.getElementById("bookingModal");
         let giftInput = document.getElementById("giftAmount");
@@ -363,6 +398,41 @@
             setTimeout(() => {
                 item.remove();
             }, 400); // match transition time
+        }
+
+        function openHistoryModal() {
+        fetch('/booking-history')
+            .then(response => response.json())
+            .then(data => {
+                let list = document.getElementById('historyList');
+                list.innerHTML = '';
+
+                if (data.length === 0) {
+                    list.innerHTML = '<p>No history found.</p>';
+                } else {
+                    data.forEach(item => {
+                        let li = document.createElement('li');
+                        li.innerHTML = `
+                            <p><strong>Gift:</strong> ${item.gift_name}</p>
+                            <p><strong>Price:</strong> RM${item.price}</p>
+                            <p><strong>Quantity:</strong> ${item.quantity}</p>
+                            <p><strong>Date:</strong> ${item.datetime}</p>
+                            <p><strong>Customer:</strong> ${item.customer_name}</p>
+                            <p><strong>Status:</strong> ${item.status}</p>
+                            <hr>
+                        `;
+                        list.appendChild(li);
+                    });
+                }
+
+                document.getElementById('historyModal').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+            document.body.style.overflow = '';
         }
 
     </script>
