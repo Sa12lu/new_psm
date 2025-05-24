@@ -257,6 +257,9 @@ def customer_gift_booking():
 
     gifts = GiftBooking.query.all()
     booked_gifts = Booked.query.filter_by(customer_id=customer_id).all()
+    
+    # Filter pending bookings only
+    pending_bookings = [b for b in booked_gifts if b.status == 'Pending']
 
     # Only for bell icon (non-pending)
     non_pending_gifts = [b for b in booked_gifts if b.status != 'Pending']
@@ -266,9 +269,11 @@ def customer_gift_booking():
         "customer_gift_booking.html",
         gifts=gifts,
         booked_gifts=booked_gifts,
+        pending_bookings=pending_bookings,  # Pass this for the modal
         non_pending_gifts=non_pending_gifts,
         show_notification_dot=show_notification_dot
     )
+
 
 
 
@@ -344,6 +349,7 @@ def mark_notified():
         db.session.commit()
     return '', 204
 
+
 @app.route('/booking-history')
 def booking_history():
     customer_id = session.get('customer_id')
@@ -357,6 +363,7 @@ def booking_history():
 
     data = [{
         'gift_name': b.gift_name,
+        'description': b.description,
         'price': b.price,
         'quantity': b.quantity,
         'datetime': b.datetime.strftime('%Y-%m-%d %H:%M:%S'),
