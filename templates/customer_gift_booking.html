@@ -1,13 +1,18 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Gift Booking</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --main: #007bff;
+            --bg: #f4f8fc;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
+            background-color: var(--bg);
             padding: 20px;
             color: #333;
             position: relative;
@@ -79,14 +84,15 @@
         }
 
 
-        .bell-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
+.bell-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
 
 
         .bell-button i {
@@ -180,14 +186,15 @@
 
         .bell-dot {
             position: absolute;
-            top: -5px;
-            right: -5px;
+            top: 5px;
+            right: 5px;
             width: 12px;
             height: 12px;
             background-color: red;
             border-radius: 50%;
             z-index: 10;
         }
+
        
         .accepted-booking {
             background-color: #d4edda;
@@ -258,20 +265,41 @@
             color: #4899f0; /* Slight color change on hover */
         }
 
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: #007bff;
+  cursor: pointer;
+  z-index: 999;
+}
+
+.back-button:hover {
+  color: #4899f0;
+}
 
     </style>
 </head>
 <body>
 
+    <!-- Back to Dashboard Icon -->
+<button class="back-button" onclick="window.location.href='{{ url_for('dashboard') }}'" title="Back to Dashboard">
+  <i class="fas fa-arrow-left"></i>
+</button>
+
+
 
     <!-- 🔔 Bell icon with red dot if rejected booking exists -->
-    <button class="bell-button" onclick="onBellClick()" title="Notifications">
-        <i class="fas fa-bell">
-            {% if show_notification_dot %}
-            <span id="bellDot" class="bell-dot"></span>
-            {% endif %}
-        </i>
-    </button>
+<button class="bell-button" onclick="onBellClick()" title="Notifications">
+    <i class="fas fa-bell"></i>
+    {% if show_notification_dot %}
+    <span id="bellDot" class="bell-dot"></span>
+    {% endif %}
+</button>
+
 
 
     <!-- 📜 History icon using Font Awesome -->
@@ -493,8 +521,9 @@
                         <p><strong>Quantity:</strong> ${item.quantity}</p>
                         <p><strong>Date:</strong> ${item.datetime}</p>
                         <p><strong>Status:</strong> ${item.status}</p>
-                        <hr>
-                    `;
+                    <hr>
+                `;
+
                     list.appendChild(li);
                 });
                 document.getElementById("historyModal").style.display = "block";
@@ -512,3 +541,4 @@
 
 </body>
 </html>
+

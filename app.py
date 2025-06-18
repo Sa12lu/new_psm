@@ -52,6 +52,7 @@ class PurchasedProduct(db.Model):
     username = db.Column(db.String(150), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # add NEW time date
+    sale_product_id = db.Column(db.Integer, db.ForeignKey('sale_product.id'), nullable=False)  # ✅ NEW
 
 class GiftBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,6 +65,7 @@ class GiftBooking(db.Model):
 
 class Booked(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    gift_id = db.Column(db.Integer, db.ForeignKey('gift_booking.id'), nullable=False)  # ← new line
     gift_name = db.Column(db.String(100), nullable=False)  # ← Add this line
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -93,14 +95,25 @@ def login():
         user = CustUser.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
-            session.clear()  # ✅ Hapus semua data sesi sebelum login
+            session.clear()
             session['username'] = user.username
             session['customer_id'] = user.id
             print(f"[LOGIN] User: {user.username}, ID: {user.id} has logged in.")
-            return redirect(url_for('dashboard'))
+            return render_template(
+                'login.html',
+                message='Login successful!',
+                category='success',
+                redirect_url=url_for('dashboard')
+            )
         else:
-            return render_template('login.html', error="Invalid credentials.")
-    return render_template('login.html')
+            return render_template(
+                'login.html',
+                message='Invalid credentials.',
+                category='danger'
+            )
+
+    return render_template('login.html', message=None, category=None)
+
 
 
 
@@ -127,13 +140,62 @@ def register():
             flash(f'Error: {e}', 'danger')
     return render_template('register.html')
 
+
 @app.route('/dashboard')
 def dashboard():
-    if 'username' in session:
-        return render_template('dashboard.html', username=session['username'])
-    else:
+    if 'username' not in session or 'customer_id' not in session:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
+
+    customer_id = session['customer_id']
+
+    # Recent individual lists
+    recent_purchases = PurchasedProduct.query\
+        .filter_by(user_id=customer_id)\
+        .order_by(PurchasedProduct.timestamp.desc())\
+        .all()
+
+    recent_bookings = Booked.query\
+        .filter_by(customer_id=customer_id)\
+        .order_by(Booked.datetime.desc())\
+        .all()
+
+    # Combine and tag activities with unified timestamp
+    combined_activities = []
+
+    for p in recent_purchases:
+        combined_activities.append({
+            'type': 'purchase',
+            'name': p.name,
+            'quantity': p.quantity,
+            'timestamp': p.timestamp
+        })
+
+    for b in recent_bookings:
+        combined_activities.append({
+            'type': 'booking',
+            'gift_name': b.gift_name,
+            'quantity': b.quantity,
+            'status': b.status,
+            'timestamp': b.datetime
+        })
+
+    # Sort by time and limit to latest 5 entries
+    combined_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    combined_activities = combined_activities[:5]
+
+    # Image slides
+    sale_products = SaleProduct.query.filter(SaleProduct.image_data != None).limit(5).all()
+    gift_bookings = GiftBooking.query.filter(GiftBooking.image_data != None).limit(5).all()
+
+    return render_template(
+        'dashboard.html',
+        username=session['username'],
+        combined_activities=combined_activities,  # ✅ Now passed to template
+        sale_products=sale_products,
+        gift_bookings=gift_bookings
+    )
+
 
 @app.route('/customer-sale')
 def customer_sale():
@@ -241,7 +303,8 @@ def process_payment():
         name=product.name,
         quantity=quantity,
         username=username,
-        user_id=customer_id
+        user_id=customer_id,
+        sale_product_id=product.id  # ✅ NEW: link back to SaleProduct
     )
     db.session.add(purchased)
     db.session.commit()
@@ -312,6 +375,7 @@ def book_gift(gift_id):
 
         # Add booking
         booking = Booked(
+            gift_id=gift.id,  # ← new line
             gift_name=gift.gift_name,  # ← Add this line
             description=gift.description,
             price=gift.price,

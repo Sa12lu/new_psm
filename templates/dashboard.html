@@ -1,14 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Customer Dashboard</title>
+  <style>
+    :root {
+      --main: #007bff;
+      --bg:   #f4f8fc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg);
+    }
+
+    h1 {
+      color: var(--main);
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .navbar {
+      background: var(--main);
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin: 0 10px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .navbar a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .slider-container {
+      position: relative;
+      overflow: hidden;
+      margin: 20px auto;
+      max-width: 90%;
+      border-radius: 10px;
+    }
+
+    .slider {
+      display: flex;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      text-align: center;
+    }
+
+    .slide img {
+      height: 200px;
+      object-fit: cover;
+      margin: 10px;
+      border-radius: 10px;
+      max-width: 90%;
+    }
+
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 60px;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 2rem;
+      line-height: 60px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 4px;
+      z-index: 10;
+    }
+
+    .arrow:hover {
+      background: rgba(0,0,0,0.5);
+    }
+
+    .arrow.prev { left: 10px; }
+    .arrow.next { right: 10px; }
+
+    .activity-container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .activity-container h2 {
+      color: var(--main);
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .activity-item {
+      font-size: 0.95em;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-type {
+      font-weight: bold;
+      color: var(--main);
+    }
+
+    .timestamp {
+      font-size: 0.85em;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
-    <h1>Welcome, customer!</h1>
-    <a href="{{ url_for('customer_sale') }}">Sell Product</a>
-    <a href="{{ url_for('customer_gift_booking') }}">Gift Booking</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
+
+<h1>Welcome, {{ username }}!</h1>
+
+<nav class="navbar">
+  <a href="{{ url_for('customer_sale') }}">Sell Product</a>
+  <a href="{{ url_for('customer_gift_booking') }}">Gift Booking</a>
+  <a href="{{ url_for('logout') }}">Logout</a>
+</nav>
+
+<!-- IMAGE SLIDER -->
+<div class="slider-container">
+  <div class="arrow prev">&#10094;</div>
+  <div class="arrow next">&#10095;</div>
+  <div class="slider" id="slider">
+    {% for item in sale_products %}
+      <div class="slide">
+        <img src="{{ url_for('product_sale_image', product_id=item.id) }}" alt="Sale Product">
+      </div>
+    {% endfor %}
+    {% for item in gift_bookings %}
+      <div class="slide">
+        <img src="{{ url_for('gift_image', gift_id=item.id) }}" alt="Gift Booking">
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="activity-container">
+  <h2>📋 Recent Activity</h2>
+
+  {% if combined_activities %}
+    {% for item in combined_activities %}
+      <div class="activity-item">
+        {% if item.type == 'purchase' %}
+          <div class="activity-type">🛒 Purchased {{ item.name }}</div>
+          <div>Quantity: {{ item.quantity }}</div>
+        {% elif item.type == 'booking' %}
+          <div class="activity-type">🎁 Booked {{ item.gift_name }}</div>
+          <div>Status: {{ item.status }} — Quantity: {{ item.quantity }}</div>
+        {% endif %}
+        <div class="timestamp">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="activity-item">No recent activity.</div>
+  {% endif %}
+</div>
+
+<script>
+  const slider = document.getElementById('slider');
+  const slides = slider.children;
+  let current = 0;
+
+  function showSlide(index) {
+    current = (index + slides.length) % slides.length;
+    slider.style.transform = `translateX(-${current * 100}%)`;
+  }
+
+  document.querySelector('.prev').onclick = () => showSlide(current - 1);
+  document.querySelector('.next').onclick = () => showSlide(current + 1);
+
+  setInterval(() => showSlide(current + 1), 4000);
+</script>
+
 </body>
 </html>

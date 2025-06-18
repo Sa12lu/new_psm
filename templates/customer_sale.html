@@ -1,291 +1,327 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buy Products</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            color: #007bff;
-            margin-bottom: 40px;
-        }
-        .catalog {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 30px;
-            padding: 0 10px;
-        }
-        .card {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: scale(1.02);
-        }
-        .card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background-color: #eee;
-        }
-        .card-body {
-            padding: 15px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        .card-text {
-            font-size: 14px;
-            margin-bottom: 10px;
-            flex-grow: 1;
-        }
-        .price {
-            font-weight: bold;
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-        .quantity {
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-        .buy-btn {
-            padding: 10px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .buy-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .modal {
-            display: none; position: fixed; z-index: 10;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: white; padding: 20px; border-radius: 8px;
-            width: 300px; text-align: center;
-        }
-        .modal-content input[type="number"] {
-            padding: 8px; width: 80%; margin-bottom: 10px;
-        }
-        .modal-content button {
-            padding: 8px 15px; margin: 5px;
-        }
+  <meta charset="UTF-8" />
+  <title>Buy Products</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --main: #007bff;
+      --bg: #f4f8fc;
+    }
 
-        .cancel-button {
-            background: none;
-            border: none;
-            color: gray;
-            font-size: 16px;
-            transform: scale(0.8); /* shrink it visually */
-            cursor: pointer;
-            padding: 0;
-            transition: color 0.2s ease;
-        }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg);
+      color: #333;
+    }
 
-        .cancel-button:hover {
-            color: darkgray;
-        }
+    h1 {
+      text-align: center;
+      color: var(--main);
+      margin-bottom: 40px;
+    }
 
-    </style>
+    .catalog {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 30px;
+      padding: 0 10px;
+    }
+
+    .card {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background-color: #eee;
+    }
+
+    .card-body {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .card-text {
+      font-size: 14px;
+      margin-bottom: 10px;
+      flex-grow: 1;
+    }
+
+    .price {
+      font-weight: bold;
+      color: #28a745;
+      margin-bottom: 10px;
+    }
+
+    .quantity {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .buy-btn {
+      padding: 10px;
+      border: none;
+      background-color: var(--main);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .buy-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .top-left,
+    .top-right {
+      position: fixed;
+      top: 20px;
+      z-index: 999;
+    }
+
+    .top-left {
+      left: 20px;
+    }
+
+    .top-right {
+      right: 20px;
+    }
+
+    .top-left button,
+    .top-right button {
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .top-left i,
+    .top-right i {
+      font-size: 28px;
+      color: var(--main);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 320px;
+      text-align: center;
+    }
+
+    .modal-content input[type="number"] {
+      padding: 8px;
+      width: 80%;
+      margin-bottom: 10px;
+    }
+
+    .modal-content button {
+      padding: 8px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--main);
+      color: white;
+      cursor: pointer;
+    }
+
+    .modal-content button:hover {
+      background-color: #0056b3;
+    }
+
+    .cart-list {
+      text-align: left;
+      padding-left: 0;
+    }
+
+    .cart-list li {
+      list-style: none;
+      margin-bottom: 15px;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .close-cart {
+      margin-top: 10px;
+      background-color: #6c757d;
+    }
+
+    .close-cart:hover {
+      background-color: #5a6268;
+    }
+  </style>
 </head>
 <body>
 
-    <div style="position: fixed; top: 20px; right: 20px; z-index: 20;">
-        <button onclick="toggleCart()" style="background: none; border: none; cursor: pointer;">
-            <i class="fas fa-shopping-cart" style="font-size: 28px; color: #007bff;"></i>
+  <!-- Back to Dashboard Button -->
+  <div class="top-left">
+    <button onclick="window.location.href='{{ url_for('dashboard') }}'" title="Back to Dashboard">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+  </div>
+
+  <!-- Cart Button -->
+  <div class="top-right">
+    <button onclick="toggleCart()" title="View Cart">
+      <i class="fas fa-shopping-cart"></i>
+    </button>
+  </div>
+
+  <h1>Available Products</h1>
+
+  <div class="catalog">
+    {% for product in products %}
+    <div class="card">
+      {% if product.image_data %}
+        <img src="{{ url_for('product_sale_image', product_id=product.id) }}" alt="{{ product.name }}">
+      {% else %}
+        <img src="https://via.placeholder.com/250x200?text=No+Image" alt="No image found">
+      {% endif %}
+      <div class="card-body">
+        <div class="card-title">{{ product.name }}</div>
+        <div class="card-text">{{ product.description or "No description available." }}</div>
+        <div class="price">RM{{ product.price }}</div>
+        <div class="quantity">In stock: {{ product.quantity }}</div>
+        <button type="button" class="buy-btn"
+          onclick="openModal({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.quantity }})"
+          {% if product.quantity == 0 %} disabled {% endif %}>
+          Buy
         </button>
-    </div>
-    
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div id="flash-message">
-      {% for category, message in messages %}
-        <div style="
-          background-color: {{ 'rgba(40, 167, 69, 0.1)' if category == 'success' else 'rgba(220, 53, 69, 0.1)' }};
-          color: {{ '#28a745' if category == 'success' else '#dc3545' }};
-          padding: 12px;
-          border-radius: 5px;
-          margin-bottom: 20px;
-          border: 1px solid {{ '#28a745' if category == 'success' else '#dc3545' }};
-          font-weight: bold;">
-          {{ message }}
-        </div>
-      {% endfor %}
-    </div>
-    <script>
-      setTimeout(() => {
-        const flash = document.getElementById('flash-message');
-        if (flash) flash.style.display = 'none';
-      }, 3000);  // 5 seconds
-    </script>
-    {% endif %}
-    {% endwith %}
-
-
-    <h1>Available Products</h1>
-
-    <div class="catalog">
-        {% for product in products %}
-        <div class="card">
-            {% if product.image_data %}
-                <img src="{{ url_for('product_sale_image', product_id=product.id) }}" alt="{{ product.name }}">
-            {% else %}
-                <img src="https://via.placeholder.com/250x200?text=No+Image" alt="No image found">
-            {% endif %}
-            <div class="card-body">
-                <div class="card-title">{{ product.name }}</div>
-                <div class="card-text">{{ product.description or "No description available." }}</div>
-                <div class="price">RM{{ product.price }}</div>
-                <div class="quantity">In stock: {{ product.quantity }}</div>
-                <button type="button" class="buy-btn"
-                            onclick="openModal({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.quantity }})"
-                            {% if product.quantity == 0 %} disabled {% endif %}>
-                    Buy
-                </button>
-        
-            </div>
-        </div>
-        {% else %}
-        <p style="grid-column: 1 / -1; text-align: center;">No products available</p>
-        {% endfor %}
-    </div>
-
-    <div id="buyModal" class="modal">
-        <div class="modal-content">
-          <h3 id="modalTitle">Buy Product</h3>
-          <p>Enter quantity:</p>
-          <input type="number" id="buyQuantity" min="1" value="1">
-          <p id="totalPrice"></p>
-          <div>
-            <button id="confirmBuy">Confirm</button>
-            <button onclick="closeModal()">Cancel</button>
-          </div>
-        </div>
       </div>
-
-    <div id="cartModal" class="modal">
-        <div class="modal-content" style="width: 350px;">
-            <h3>Your Purchases</h3>
-            {% if purchased_products %}
-            <ul style="text-align: left; padding-left: 0;">
-                {% for item in purchased_products %}
-                <li style="margin-bottom: 10px; list-style: none;" id="purchase-{{ item.id }}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>{{ item.name }}</strong><br>
-                            Quantity: {{ item.quantity }}<br>
-                            Status: {{ item.status }}
-                        </div>
-                        <!--button type="button" onclick="hidePurchase({{ item.id }})"
-                                style="background: none; border: none; cursor: pointer;">
-                            <i class="fas fa-times-circle" style="color: red; font-size: 20px;"></i>
-                        </button-->
-                        <button class="cancel-button" onclick="hidePurchas({{ item.id }})" >❌</button>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-            
-            {% else %}
-                <p>No products purchased.</p>
-            {% endif %}
-            <button onclick="toggleCart()">Close</button>
-        </div>
     </div>
-      
+    {% else %}
+      <p style="grid-column: 1 / -1; text-align: center;">No products available</p>
+    {% endfor %}
+  </div>
 
-    <script>
+  <!-- Buy Modal -->
+  <div id="buyModal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Buy Product</h3>
+      <p>Enter quantity:</p>
+      <input type="number" id="buyQuantity" min="1" value="1">
+      <p id="totalPrice"></p>
+      <div>
+        <button id="confirmBuy">Confirm</button>
+        <button onclick="closeModal()" class="close-cart">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+ <!-- Cart Modal -->
+ <div id="cartModal" class="modal">
+  <div class="modal-content" style="width: 350px; position: relative;">
+    <button onclick="toggleCart()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer; color: #333;">
+      <i class="fas fa-times"></i>
+    </button>
+    <h3 style="margin-top: 0;">Your Purchases</h3>
+    {% if purchased_products %}
+    <ul class="cart-list">
+      {% for item in purchased_products %}
+      <li>
+        <strong>{{ item.name }}</strong><br>
+        Quantity: {{ item.quantity }}<br>
+        Status: {{ item.status }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p>No products purchased.</p>
+    {% endif %}
+  </div>
+ </div>
+
+
+  <script>
     let selectedProductId = null;
     let maxStock = 0;
     let price = 0;
-        
-    function openModal(productId, productName, productPrice, stockQty) {
-         selectedProductId = productId;
-         maxStock = stockQty;
-         price = productPrice;
-        
-         document.getElementById('modalTitle').textContent = `Buy ${productName}`;
-         document.getElementById('buyQuantity').value = 1;
-         document.getElementById('totalPrice').textContent = `Total: RM${price.toFixed(2)}`;
-         document.getElementById('buyModal').style.display = 'flex';
-        }
-        
-    function closeModal() {
-         document.getElementById('buyModal').style.display = 'none';
-        }
-        
-    document.getElementById('buyQuantity').addEventListener('input', function () {
-         let qty = parseInt(this.value) || 0;
-         if (qty > maxStock) {
-                this.value = maxStock;
-                qty = maxStock;
-            }
-         const total = qty * price;
-         document.getElementById('totalPrice').textContent = `Total: RM${total.toFixed(2)}`;
-        });
-        
-    document.getElementById('confirmBuy').addEventListener('click', function () {
-         const quantity = parseInt(document.getElementById('buyQuantity').value) || 1;
-         if (quantity > maxStock) {
-                alert("Cannot buy more than available stock.");
-                return;
-            }
-        
-         const form = document.createElement('form');
-         form.method = 'POST';
-         form.action = `/buy-product/${selectedProductId}`;
-        
-         const input = document.createElement('input');
-         input.type = 'hidden';
-         input.name = 'quantity';
-         input.value = quantity;
-         form.appendChild(input);
-         document.body.appendChild(form);
-         form.submit();
-        });
 
-    function hidePurchase(id) {
-         const element = document.getElementById(`purchase-${id}`);
-         if (element) {
-             element.style.display = 'none';
-            }
-        }
-       
+    function openModal(productId, productName, productPrice, stockQty) {
+      selectedProductId = productId;
+      maxStock = stockQty;
+      price = productPrice;
+
+      document.getElementById('modalTitle').textContent = `Buy ${productName}`;
+      document.getElementById('buyQuantity').value = 1;
+      document.getElementById('totalPrice').textContent = `Total: RM${price.toFixed(2)}`;
+      document.getElementById('buyModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('buyModal').style.display = 'none';
+    }
+
+    document.getElementById('buyQuantity').addEventListener('input', function () {
+      let qty = parseInt(this.value) || 0;
+      if (qty > maxStock) {
+        this.value = maxStock;
+        qty = maxStock;
+      }
+      const total = qty * price;
+      document.getElementById('totalPrice').textContent = `Total: RM${total.toFixed(2)}`;
+    });
+
+    document.getElementById('confirmBuy').addEventListener('click', function () {
+      const quantity = parseInt(document.getElementById('buyQuantity').value) || 1;
+      if (quantity > maxStock) {
+        alert("Cannot buy more than available stock.");
+        return;
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/buy-product/${selectedProductId}`;
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'quantity';
+      input.value = quantity;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+    });
+
     function toggleCart() {
-        const cartModal = document.getElementById('cartModal');
-        cartModal.style.display = cartModal.style.display === 'flex' ? 'none' : 'flex';
-        }
-   
-</script>
-        
+      const cartModal = document.getElementById('cartModal');
+      cartModal.style.display = cartModal.style.display === 'flex' ? 'none' : 'flex';
+    }
+  </script>
 </body>
 </html>
 
