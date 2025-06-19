@@ -14,6 +14,11 @@ app.secret_key = 'your_secret_key'
 # MySQL Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:GaQSDgaPsJnHGflsOhvogTsKqKmmexIm@tramway.proxy.rlwy.net:31763/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+#Xampp
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/flask_app'
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Allowed image extensions
